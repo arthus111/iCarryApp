@@ -9,7 +9,7 @@ import {
 import { Toast } from "@shopify/app-bridge-react";
 import { useAppQuery, useAuthenticatedFetch } from "../hooks";
 
-export function ProductsCard() {
+export function Initial_configuration() {
   const emptyToastProps = { content: null };
   const [isLoading, setIsLoading] = useState(true);
   const [toastProps, setToastProps] = useState(emptyToastProps);
@@ -21,7 +21,7 @@ export function ProductsCard() {
     isLoading: isLoadingCount,
     isRefetching: isRefetchingCount,
   } = useAppQuery({
-    url: "/api/products/count",
+    url: "/api/configuration",
     reactQueryOptions: {
       onSuccess: () => {
         setIsLoading(false);
@@ -39,11 +39,11 @@ export function ProductsCard() {
 
     if (response.ok) {
       await refetchProductCount();
-      setToastProps({ content: "5 products created!" });
+      setToastProps({ content: "carrier service and webhook added sucessfully   " });
     } else {
       setIsLoading(false);
       setToastProps({
-        content: "There was an error creating products",
+        content: "There was an error adding service and webhook",
         error: true,
       });
     }
@@ -53,24 +53,23 @@ export function ProductsCard() {
     <>
       {toastMarkup}
       <Card
-        title="Product Counter"
+        title="App initializer"
         sectioned
         primaryFooterAction={{
-          content: "Populate 5 products",
-          onAction: handlePopulate,
+          content: "Initialization finished.",
+          //onAction: handlePopulate,
           loading: isLoading,
         }}
       >
         <TextContainer spacing="loose">
           <p>
-            Sample products are created with a default title and price. You can
-            remove them at any time.
+            Initializer that add carrier-services and webhook.
           </p>
           <Heading element="h4">
-            TOTAL PRODUCTS
-            <DisplayText size="medium">
+            Result:
+            <DisplayText size="small">
               <TextStyle variation="strong">
-                {isLoadingCount ? "-" : data.count}
+                {isLoadingCount ? "-" : data.message}
               </TextStyle>
             </DisplayText>
           </Heading>

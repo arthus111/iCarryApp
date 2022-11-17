@@ -23,7 +23,7 @@ export default function App() {
                 {
                   label: "Page name",
                   destination: "/pagename",
-                },
+                }
               ]}
             />
             <Routes pages={pages} />
