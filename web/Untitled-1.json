@@ -1,0 +1,467 @@
+{
+    "order": {
+        "id": 5203177472299,
+        "admin_graphql_api_id": "gid://shopify/Order/5203177472299",
+        "app_id": 1354745,
+        "browser_ip": null,
+        "buyer_accepts_marketing": false,
+        "cancel_reason": null,
+        "cancelled_at": null,
+        "cart_token": null,
+        "checkout_id": 36441137447211,
+        "checkout_token": "2887daca63817eaa1a69669e827e3817",
+        "client_details": {
+            "accept_language": null,
+            "browser_height": null,
+            "browser_ip": null,
+            "browser_width": null,
+            "session_hash": null,
+            "user_agent": null
+        },
+        "closed_at": "2022-11-17T18:25:20+02:00",
+        "confirmed": true,
+        "contact_email": "abc@gmail.com",
+        "created_at": "2022-11-17T18:23:24+02:00",
+        "currency": "AED",
+        "current_subtotal_price": "100.00",
+        "current_subtotal_price_set": {
+            "shop_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            }
+        },
+        "current_total_discounts": "0.00",
+        "current_total_discounts_set": {
+            "shop_money": {
+                "amount": "0.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "0.00",
+                "currency_code": "AED"
+            }
+        },
+        "current_total_duties_set": null,
+        "current_total_price": "105.24",
+        "current_total_price_set": {
+            "shop_money": {
+                "amount": "105.24",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "105.24",
+                "currency_code": "AED"
+            }
+        },
+        "current_total_tax": "5.00",
+        "current_total_tax_set": {
+            "shop_money": {
+                "amount": "5.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "5.00",
+                "currency_code": "AED"
+            }
+        },
+        "customer_locale": "en",
+        "device_id": null,
+        "discount_codes": [],
+        "email": "abc@gmail.com",
+        "estimated_taxes": false,
+        "financial_status": "paid",
+        "fulfillment_status": "fulfilled",
+        "gateway": "manual",
+        "landing_site": null,
+        "landing_site_ref": null,
+        "location_id": null,
+        "merchant_of_record_app_id": null,
+        "name": "#1019",
+        "note": null,
+        "note_attributes": [],
+        "number": 19,
+        "order_number": 1019,
+        "order_status_url": "https://icarrytest2.myshopify.com/68154097963/orders/b965382bc2fda3f077aaaa381f308834/authenticate?key=65aebcb6bd0e78bea5e41023559c0be1",
+        "original_total_duties_set": null,
+        "payment_gateway_names": [
+            "manual"
+        ],
+        "phone": null,
+        "presentment_currency": "AED",
+        "processed_at": "2022-11-17T18:23:24+02:00",
+        "processing_method": "manual",
+        "reference": null,
+        "referring_site": null,
+        "source_identifier": null,
+        "source_name": "shopify_draft_order",
+        "source_url": null,
+        "subtotal_price": "100.00",
+        "subtotal_price_set": {
+            "shop_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            }
+        },
+        "tags": "",
+        "tax_lines": [
+            {
+                "price": "5.00",
+                "rate": 0.05,
+                "title": "VAT",
+                "price_set": {
+                    "shop_money": {
+                        "amount": "5.00",
+                        "currency_code": "AED"
+                    },
+                    "presentment_money": {
+                        "amount": "5.00",
+                        "currency_code": "AED"
+                    }
+                },
+                "channel_liable": false
+            }
+        ],
+        "taxes_included": false,
+        "test": false,
+        "token": "b965382bc2fda3f077aaaa381f308834",
+        "total_discounts": "0.00",
+        "total_discounts_set": {
+            "shop_money": {
+                "amount": "0.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "0.00",
+                "currency_code": "AED"
+            }
+        },
+        "total_line_items_price": "100.00",
+        "total_line_items_price_set": {
+            "shop_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "100.00",
+                "currency_code": "AED"
+            }
+        },
+        "total_outstanding": "0.00",
+        "total_price": "105.24",
+        "total_price_set": {
+            "shop_money": {
+                "amount": "105.24",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "105.24",
+                "currency_code": "AED"
+            }
+        },
+        "total_shipping_price_set": {
+            "shop_money": {
+                "amount": "0.24",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "0.24",
+                "currency_code": "AED"
+            }
+        },
+        "total_tax": "5.00",
+        "total_tax_set": {
+            "shop_money": {
+                "amount": "5.00",
+                "currency_code": "AED"
+            },
+            "presentment_money": {
+                "amount": "5.00",
+                "currency_code": "AED"
+            }
+        },
+        "total_tip_received": "0.00",
+        "total_weight": 0,
+        "updated_at": "2022-11-17T18:25:20+02:00",
+        "user_id": 87753982251,
+        "billing_address": {
+            "first_name": "abc",
+            "address1": "12 elahser mn ramadan st, shoubra el khema",
+            "phone": "",
+            "city": "Qalyubia",
+            "zip": "",
+            "province": "Abu Dhabi",
+            "country": "United Arab Emirates",
+            "last_name": "eds",
+            "address2": "",
+            "company": "",
+            "latitude": 24.4865141,
+            "longitude": 54.3649243,
+            "name": "abc eds",
+            "country_code": "AE",
+            "province_code": "AZ"
+        },
+        "customer": {
+            "id": 6689006551339,
+            "email": "abc@gmail.com",
+            "accepts_marketing": false,
+            "created_at": "2022-11-17T17:35:04+02:00",
+            "updated_at": "2022-11-17T18:23:25+02:00",
+            "first_name": "abc",
+            "last_name": "eds",
+            "state": "disabled",
+            "note": null,
+            "verified_email": true,
+            "multipass_identifier": null,
+            "tax_exempt": false,
+            "tags": "",
+            "currency": "AED",
+            "phone": null,
+            "accepts_marketing_updated_at": "2022-11-17T17:35:04+02:00",
+            "marketing_opt_in_level": null,
+            "tax_exemptions": [],
+            "email_marketing_consent": {
+                "state": "not_subscribed",
+                "opt_in_level": "single_opt_in",
+                "consent_updated_at": null
+            },
+            "sms_marketing_consent": null,
+            "admin_graphql_api_id": "gid://shopify/Customer/6689006551339",
+            "default_address": {
+                "id": 8947777339691,
+                "customer_id": 6689006551339,
+                "first_name": "abc",
+                "last_name": "eds",
+                "company": "",
+                "address1": "12 elahser mn ramadan st, shoubra el khema",
+                "address2": "",
+                "city": "Qalyubia",
+                "province": "Abu Dhabi",
+                "country": "United Arab Emirates",
+                "zip": "",
+                "phone": "",
+                "name": "abc eds",
+                "province_code": "AZ",
+                "country_code": "AE",
+                "country_name": "United Arab Emirates",
+                "default": true
+            }
+        },
+        "discount_applications": [],
+        "fulfillments": [
+            {
+                "id": 4617699033387,
+                "admin_graphql_api_id": "gid://shopify/Fulfillment/4617699033387",
+                "created_at": "2022-11-17T18:25:20+02:00",
+                "location_id": 73446850859,
+                "name": "#1019.1",
+                "order_id": 5203177472299,
+                "origin_address": {},
+                "receipt": {},
+                "service": "manual",
+                "shipment_status": null,
+                "status": "success",
+                "tracking_company": null,
+                "tracking_number": null,
+                "tracking_numbers": [],
+                "tracking_url": null,
+                "tracking_urls": [],
+                "updated_at": "2022-11-17T18:25:20+02:00",
+                "line_items": [
+                    {
+                        "id": 13642552017195,
+                        "admin_graphql_api_id": "gid://shopify/LineItem/13642552017195",
+                        "fulfillable_quantity": 0,
+                        "fulfillment_service": "manual",
+                        "fulfillment_status": "fulfilled",
+                        "gift_card": false,
+                        "grams": 0,
+                        "name": "T-shirt 1",
+                        "price": "100.00",
+                        "price_set": {
+                            "shop_money": {
+                                "amount": "100.00",
+                                "currency_code": "AED"
+                            },
+                            "presentment_money": {
+                                "amount": "100.00",
+                                "currency_code": "AED"
+                            }
+                        },
+                        "product_exists": true,
+                        "product_id": 8008387592491,
+                        "properties": [],
+                        "quantity": 1,
+                        "requires_shipping": true,
+                        "sku": "",
+                        "taxable": true,
+                        "title": "T-shirt 1",
+                        "total_discount": "0.00",
+                        "total_discount_set": {
+                            "shop_money": {
+                                "amount": "0.00",
+                                "currency_code": "AED"
+                            },
+                            "presentment_money": {
+                                "amount": "0.00",
+                                "currency_code": "AED"
+                            }
+                        },
+                        "variant_id": 44057112052011,
+                        "variant_inventory_management": "shopify",
+                        "variant_title": "",
+                        "vendor": "icarrytest2",
+                        "tax_lines": [
+                            {
+                                "channel_liable": false,
+                                "price": "5.00",
+                                "price_set": {
+                                    "shop_money": {
+                                        "amount": "5.00",
+                                        "currency_code": "AED"
+                                    },
+                                    "presentment_money": {
+                                        "amount": "5.00",
+                                        "currency_code": "AED"
+                                    }
+                                },
+                                "rate": 0.05,
+                                "title": "VAT"
+                            }
+                        ],
+                        "duties": [],
+                        "discount_allocations": []
+                    }
+                ]
+            }
+        ],
+        "line_items": [
+            {
+                "id": 13642552017195,
+                "admin_graphql_api_id": "gid://shopify/LineItem/13642552017195",
+                "fulfillable_quantity": 0,
+                "fulfillment_service": "manual",
+                "fulfillment_status": "fulfilled",
+                "gift_card": false,
+                "grams": 0,
+                "name": "T-shirt 1",
+                "price": "100.00",
+                "price_set": {
+                    "shop_money": {
+                        "amount": "100.00",
+                        "currency_code": "AED"
+                    },
+                    "presentment_money": {
+                        "amount": "100.00",
+                        "currency_code": "AED"
+                    }
+                },
+                "product_exists": true,
+                "product_id": 8008387592491,
+                "properties": [],
+                "quantity": 1,
+                "requires_shipping": true,
+                "sku": "",
+                "taxable": true,
+                "title": "T-shirt 1",
+                "total_discount": "0.00",
+                "total_discount_set": {
+                    "shop_money": {
+                        "amount": "0.00",
+                        "currency_code": "AED"
+                    },
+                    "presentment_money": {
+                        "amount": "0.00",
+                        "currency_code": "AED"
+                    }
+                },
+                "variant_id": 44057112052011,
+                "variant_inventory_management": "shopify",
+                "variant_title": "",
+                "vendor": "icarrytest2",
+                "tax_lines": [
+                    {
+                        "channel_liable": false,
+                        "price": "5.00",
+                        "price_set": {
+                            "shop_money": {
+                                "amount": "5.00",
+                                "currency_code": "AED"
+                            },
+                            "presentment_money": {
+                                "amount": "5.00",
+                                "currency_code": "AED"
+                            }
+                        },
+                        "rate": 0.05,
+                        "title": "VAT"
+                    }
+                ],
+                "duties": [],
+                "discount_allocations": []
+            }
+        ],
+        "payment_terms": null,
+        "refunds": [],
+        "shipping_address": {
+            "first_name": "abc",
+            "address1": "12 elahser mn ramadan st, shoubra el khema",
+            "phone": "",
+            "city": "Qalyubia",
+            "zip": "",
+            "province": "Abu Dhabi",
+            "country": "United Arab Emirates",
+            "last_name": "eds",
+            "address2": "",
+            "company": "",
+            "latitude": 24.4865141,
+            "longitude": 54.3649243,
+            "name": "abc eds",
+            "country_code": "AE",
+            "province_code": "AZ"
+        },
+        "shipping_lines": [
+            {
+                "id": 4258021703979,
+                "carrier_identifier": "4a9ade07b811aa7918cd7ea78152ff6e",
+                "code": "None",
+                "delivery_category": null,
+                "discounted_price": "0.24",
+                "discounted_price_set": {
+                    "shop_money": {
+                        "amount": "0.24",
+                        "currency_code": "AED"
+                    },
+                    "presentment_money": {
+                        "amount": "0.24",
+                        "currency_code": "AED"
+                    }
+                },
+                "phone": null,
+                "price": "0.24",
+                "price_set": {
+                    "shop_money": {
+                        "amount": "0.24",
+                        "currency_code": "AED"
+                    },
+                    "presentment_money": {
+                        "amount": "0.24",
+                        "currency_code": "AED"
+                    }
+                },
+                "requested_fulfillment_service_id": null,
+                "source": "Test Carrier Service",
+                "title": "NET",
+                "tax_lines": [],
+                "discount_allocations": []
+            }
+        ]
+    }
+}
