@@ -187,6 +187,8 @@ Route::post('/api/shipping/getrate', function (Request $request) {
 
 Route::post('/api/shipping/create_order', function (Request $request) {
 
+    $headers = $request->header('X-Shopify-Shop-Domain');
+    $access_token = Session::where('shop', $headers)->first()->access_token;
     // Create options for the API
     $options = new Options();
     // $options->setType(true); // Makes it private
@@ -196,11 +198,13 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     // Create the client and session
     $api = new BasicShopifyAPI($options);
 
-    $api->setSession(new APISession('icarrytest3.myshopify.com','shpua_9afeee0456a420e7a614900cead889cc'));
+    $api->setSession(new APISession($headers, $access_token));
 
     $filename = time();
     $input = file_get_contents('php://input');
     $orders = json_decode($input, true);
+
+    //file_put_contents($filename.'-input',$input);
 
 
     // Now run your requests...
@@ -248,27 +252,31 @@ Route::post('/api/shipping/create_order', function (Request $request) {
         "Price"=> $result['body']['order']['total_price']
     ])->object();
 
-    $filename =  time();
-    file_put_contents($filename.'-outputorder',json_encode($create_orders));
+    $tracking_number = $create_orders->TrackingNumber;
+    //file_put_contents($filename.'-trackingNumber',$tracking_number);
+
+    $tracking_info= array("number" => $tracking_number);
+
+    $fulfill_track = array(
+        'nofity_customer'=>true,
+        'tracking_info'=>$tracking_info
+    );
+
+    $param = array('fulfillment' => $fulfill_track);
+    //file_put_contents($filename.'-ful_track', json_encode($param));
+
+    $result = $api->rest('POST', '/admin/fulfillments/'.$orders['id'].'/update_tracking.json',$param);
+    $fulfillment_update = $result['body']['fulfillment'];
+    //file_put_contents($filename.'-update_fulfillment',json_encode($fulfillment_update));
 
     return true;
 })->name('create.shipping_order');
 
-Route::post('/api/order/create', function (Request $request) {
-    // $filename = time();
-    // file_put_contents($filename.'-shop', "abcd");
-    // $shop = Auth::user();
-    // file_put_contents($filename.'-shop', $shop);
+Route::post('/api/order/createssss', function (Request $request) {
+    $filename = time();
+    $headers = $request->header('X-Shopify-Shop-Domain');
 
-    // $domain = $shop->getDomain()->toNative();
-    // file_put_contents($filename.'-domain', $domain);
-
-    // $shopApi = $shop->api()->rest('GET', '/admin/shop.json')['body']['shop'];
-    // file_put_contents($filename.'-shopApi', $shopApi);
-
-
-    // Log::info("Shop {$domain}'s object:" . json_encode($shop));
-    // Log::info("Shop {$domain}'s API objct:" . json_encode($shopApi));
+    $access_token = Session::where('shop', $headers)->first()->access_token;
     // Create options for the API
     $options = new Options();
     // $options->setType(true); // Makes it private
@@ -277,12 +285,12 @@ Route::post('/api/order/create', function (Request $request) {
     $options->setApiPassword(env('SHOPIFY_API_SECRET'));
     // Create the client and session
     $api = new BasicShopifyAPI($options);
-    $api->setSession(new APISession('icarrytest3.myshopify.com','shpua_9afeee0456a420e7a614900cead889cc'));
+    $api->setSession(new APISession($headers, $access_token));
 
     $filename = time();
     $input = file_get_contents('php://input');
     $order = json_decode($input, true);
-    file_put_contents($filename.'-create-order-input', $input);
+    //file_put_contents($filename.'-create-order-input', $input);
 
     // Now run your requests...
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'/fulfillment_orders.json');
@@ -327,7 +335,7 @@ Route::post('/api/order/create', function (Request $request) {
         $result = $api->rest('POST', '/admin/fulfillments.json', $param);
         $fulfillment_result = $result['body']['fulfillment'];
 
-        file_put_contents($filename.'-response_fulfillment', json_encode($fulfillment_result));
+        //file_put_contents($filename.'-response_fulfillment', json_encode($fulfillment_result));
 
         $quantity = 0;
         $weight = 0;
@@ -339,7 +347,7 @@ Route::post('/api/order/create', function (Request $request) {
 
         $result = $api->rest('GET', '/admin/locations/'.$fulfillment_result->location_id.'.json');
         $location_address = $result['body']['location']['name'];
-        file_put_contents($filename.'-location', $location_address);
+        //file_put_contents($filename.'-location', $location_address);
         $create_orders = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/CreateOrder', [
@@ -373,7 +381,7 @@ Route::post('/api/order/create', function (Request $request) {
         ])->object();
 
         $filename =  time();
-        file_put_contents($filename.'-carrier_response',json_encode($create_orders));
+        //file_put_contents($filename.'-carrier_response',json_encode($create_orders));
 
         $tracking_number = $create_orders->TrackingNumber;
         //file_put_contents($filename.'-trackingNumber',$tracking_number);
@@ -386,11 +394,11 @@ Route::post('/api/order/create', function (Request $request) {
         );
 
         $param = array('fulfillment' => $fulfill_track);
-        file_put_contents($filename.'-ful_track', json_encode($param));
+        //file_put_contents($filename.'-ful_track', json_encode($param));
 
         $result = $api->rest('POST', '/admin/fulfillments/'.$fulfillment_result->id.'/update_tracking.json',$param);
         $fulfillment_update = $result['body']['fulfillment'];
-        file_put_contents($filename.'-response_fulfillment_update', json_encode($fulfillment_update));
+        //file_put_contents($filename.'-response_fulfillment_update', json_encode($fulfillment_update));
     }
 })->name('create.order');
 
