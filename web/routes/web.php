@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Response;
 
 use Shopify\Auth\OAuth;
 use Shopify\Auth\Session as AuthSession;
@@ -20,10 +22,6 @@ use Shopify\Exception\InvalidWebhookException;
 use Shopify\Webhooks\Registry;
 use Shopify\Webhooks\Topics;
 
-
-
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\Response;
 use Shopify\Rest\Admin2022_10\Order;
 use Shopify\Rest\Admin2022_10\Product;
 use Shopify\Rest\Admin2022_10\CarrierService;
@@ -119,19 +117,25 @@ Route::post('/api/webhooks', function (Request $request) {
 });
 
 Route::post('/api/shipping/getrate', function (Request $request) {
+    $filename = time();
+
     $input = file_get_contents('php://input');
 
     // parse the request
     $rates = json_decode($input, true);
 
     // total up the cart quantities for simple rate calculations
+    $codAmount = 0;
     $quantity = 0;
     $weight = 0;
+    ///file_put_contents($filename."-000getrate", $input);
     foreach($rates['rate']['items'] as $item) {
         $quantity += $item['quantity'];
+        $codAmount += $item['quantity'] * $item['price'];
         $weight += $item['grams']/1000;
     }
 
+    //file_put_contents($filename."-000CodAmount", $codAmount);
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => 'api@customer.test',
         'Password' => 'Xyz78900'
@@ -140,9 +144,9 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     $carrier_rates = Http::withHeaders([
         'Authorization' => 'Bearer ' . $token,
     ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/EstimateRatesByCOD', [
-        'incluedShippingCost' => false,
-        'CODAmount' => $quantity,
-        'COdCurrency' => 'AED',
+        'incluedShippingCost' => true,
+        'CODAmount' => $codAmount,
+        'COdCurrency' => $rates['rate']['currency'],
         'DropOffLocation' => $rates['rate']['destination']['address1'].', '.$rates['rate']['destination']['city'].' '.$rates['rate']['destination']['province'].', '.$rates['rate']['destination']['country'],
         'ToLongitude' => $rates['rate']['destination']['longitude'],
         'ToLatitude' => $rates['rate']['destination']['latitude'],
@@ -171,15 +175,15 @@ Route::post('/api/shipping/getrate', function (Request $request) {
             'service_code'=> empty($rate->MethodName)? "None":$rate->MethodName,
             'description' => $rate->Description,
             'total_price'=> $rate->Rate,
-            'currency'=> 'AED',
+            'currency'=> $rates['rate']['currency'], // this from shopify store.
             'min_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+1 days')),
             'max_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+2 days'))
         );
+        //file_put_contents($filename."-000getResult", json_encode($rate));
         array_push($data, $arr);
     }
 
     $res['rates'] = $data;
-
     header('Content-Type: application/json');
     echo json_encode($res);
 
@@ -197,24 +201,44 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     $options->setApiPassword(env('SHOPIFY_API_SECRET'));
     // Create the client and session
     $api = new BasicShopifyAPI($options);
-
     $api->setSession(new APISession($headers, $access_token));
 
     $filename = time();
     $input = file_get_contents('php://input');
-    $orders = json_decode($input, true);
+    $fulfillment = json_decode($input, true);
 
-    //file_put_contents($filename.'-input',$input);
-
+    //file_put_contents($filename.'-0input',$input);
+    if(!empty($fulfillment['tracking_number']))
+        return false;
 
     // Now run your requests...
-    $result = $api->rest('GET', '/admin/orders/'.$orders['order_id'].'.json');
+    $result = $api->rest('GET', '/admin/orders/'.$fulfillment['order_id'].'.json');
+    $order = $result['body']['order'];
+
+    $codAmount = 0;
     $quantity = 0;
     $weight = 0;
-    foreach($orders['line_items'] as $item) {
-        $quantity += $item['quantity'];
+    foreach($fulfillment['line_items'] as $item) {
+        $quantity = $item['quantity'];
+        $price = $item['price'];
+        $codAmount += $quantity * $price;
         $weight += $item['grams']/1000;
     }
+
+    //file_put_contents($filename.'-110',gettype($order['payment_gateway_names']));
+    $temp = serialize($order['payment_gateway_names']);
+
+    $codString = "Cash on Delivery (COD)";
+    //file_put_contents($filename.'-codAmuont', $codAmount);
+    if(strpos($temp, $codString)!==false)
+    $codAmount = $order['total_price'];
+    else
+    $codAmount=0;
+    //file_put_contents($filename.'-codAmuont2', $codAmount);
+
+    $location = $api->rest('GET', '/admin/locations/'.$fulfillment['location_id'].'.json');
+    $location_address = $location['body']['location']['name'];
+    //file_put_contents($filename.'-1location0', $location_address);
 
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => 'api@customer.test',
@@ -225,37 +249,42 @@ Route::post('/api/shipping/create_order', function (Request $request) {
         'Authorization' => 'Bearer ' . $token,
     ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/CreateOrder', [
         "ProcessOrder"=> false,
+        "pickupLocation"=> $location_address,
         "dropOffAddress"=> [
-            "FirstName"=> $result['body']['order']['shipping_address']['first_name'],
-            "LastName"=> $result['body']['order']['shipping_address']['last_name'],
-            "Email"=> $result['body']['order']['customer']['email'],
-            "PhoneNumber"=> empty( $result['body']['order']['shipping_address']['phone'])? 01234567:$result['body']['order']['shipping_address']['phone'],
-            "Country"=> "lebanon",//$result['body']['order']['shipping_address']['country'],
-            "City"=> $result['body']['order']['shipping_address']['city'],
-            "Address1"=> "beirut,lebanon", //$result['body']['order']['shipping_address']['address1'],
-            "Address2"=> empty( $result['body']['order']['shipping_address']['address2'])? 01234567:$result['body']['order']['shipping_address']['address2'],
-            "ZipPostalCode"=> empty( $result['body']['order']['shipping_address']['zip'])? 01234567:$result['body']['order']['shipping_address']['zip'],
+            "FirstName"=> $order['shipping_address']['first_name'],
+            "LastName"=> $order['shipping_address']['last_name'],
+            "Email"=> $order['customer']['email'],
+            "PhoneNumber"=> empty( $order['shipping_address']['phone'])? 01234567:$order['shipping_address']['phone'],
+            "Country"=> "lebanon",//$order['shipping_address']['country'],
+            "City"=> $order['shipping_address']['city'],
+            "Address1"=> "beirut,lebanon", //$order['shipping_address']['address1'],
+            "Address2"=> empty( $order['shipping_address']['address2'])? 01234567:$order['shipping_address']['address2'],
+            "ZipPostalCode"=> empty( $order['shipping_address']['zip'])? 01234567:$order['shipping_address']['zip'],
         ],
 
-        "CODAmount"=> $quantity,
-        "COdCurrency"=> $result['body']['order']['currency'],
+        "CODAmount"=> $codAmount,
+        "COdCurrency"=> $order['currency'],
         "ActualWeight"=> $weight,
         "PackageType"=> "Parcel",
         "Length"=> 1,
         "Width"=> 1,
         "Height"=> 1,
 
-        "Notes"=> empty($result['body']['order']['note'])? '':$result['body']['order']['note'],
-        "SystemShipmentProvider"=>(empty($result['body']['order']['shipping_lines'][0]['title']) || $result['body']['order']['shipping_lines'][0]['title']=="Standard")? null:"Shipping.".$result['body']['order']['shipping_lines'][0]['title'],
-        "MethodName"=>($result['body']['order']['shipping_lines'][0]['code']=="None" || $result['body']['order']['shipping_lines'][0]['code']=="Standard")? null:$result['body']['order']['shipping_lines'][0]['code'],
-        "MethodDescription"=>($result['body']['order']['shipping_lines'][0]['code']=="None" || $result['body']['order']['shipping_lines'][0]['code']=="Standard")? null:$result['body']['order']['shipping_lines'][0]['code'],
-        "Price"=> $result['body']['order']['total_price']
+        "Notes"=> empty($order['note'])? '':$order['note'],
+        "SystemShipmentProvider"=>(empty($order['shipping_lines'][0]['title']) || $order['shipping_lines'][0]['title']=="Standard")? null:"Shipping.".$order['shipping_lines'][0]['title'],
+        "MethodName"=>($order['shipping_lines'][0]['code']=="None" || $order['shipping_lines'][0]['code']=="Standard")? null:$order['shipping_lines'][0]['code'],
+        "MethodDescription"=>($order['shipping_lines'][0]['code']=="None" || $order['shipping_lines'][0]['code']=="Standard")? null:$order['shipping_lines'][0]['code'],
+        "Price"=> $order['total_price']
     ])->object();
 
     $tracking_number = $create_orders->TrackingNumber;
-    //file_put_contents($filename.'-trackingNumber',$tracking_number);
+    //file_put_contents($filename.'-1trackingNumber0',$tracking_number);
 
-    $tracking_info= array("number" => $tracking_number);
+    $tracking_info= array(
+        "number" => $tracking_number,
+        "url" =>"https://test.icarry.com/Order/TraceShipment?trackingNumber=".$tracking_number,
+        "company"=>"iCARRY"
+    );
 
     $fulfill_track = array(
         'nofity_customer'=>true,
@@ -263,17 +292,16 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     );
 
     $param = array('fulfillment' => $fulfill_track);
-    //file_put_contents($filename.'-ful_track', json_encode($param));
+    //file_put_contents($filename.'-ful_track0', json_encode($param));
 
-    $result = $api->rest('POST', '/admin/fulfillments/'.$orders['id'].'/update_tracking.json',$param);
+    $result = $api->rest('POST', '/admin/fulfillments/'.$fulfillment['id'].'/update_tracking.json',$param);
     $fulfillment_update = $result['body']['fulfillment'];
-    //file_put_contents($filename.'-update_fulfillment',json_encode($fulfillment_update));
+    //file_put_contents($filename.'-2update_fulfillment',json_encode($fulfillment_update));
 
     return true;
 })->name('create.shipping_order');
 
-Route::post('/api/order/createssss', function (Request $request) {
-    $filename = time();
+Route::post('/api/order/create', function (Request $request) {
     $headers = $request->header('X-Shopify-Shop-Domain');
 
     $access_token = Session::where('shop', $headers)->first()->access_token;
@@ -290,20 +318,20 @@ Route::post('/api/order/createssss', function (Request $request) {
     $filename = time();
     $input = file_get_contents('php://input');
     $order = json_decode($input, true);
-    //file_put_contents($filename.'-create-order-input', $input);
+    //file_put_contents($filename.'-0create-order-input', $input);
 
     // Now run your requests...
+    if($order['fulfillment_status']=="fulfilled")
+        return false;
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'/fulfillment_orders.json');
-    //$result = $api->rest('GET', '/admin/orders/5202996724002/fulfillment_orders.json');
     $fulfillment_orders = $result['body']['fulfillment_orders'];
 
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => 'api@customer.test',
         'Password' => 'Xyz78900'
     ])->object()->token;
-    $test = 111;
 
-    // file_put_contents($filename.'--fulfillment_orders', json_encode($fulfillment_orders));
+    //file_put_contents($filename.'-1fulfillment_orders', json_encode($fulfillment_orders));
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'.json');
     $got_order = $result['body']['order'];
 
@@ -331,74 +359,9 @@ Route::post('/api/order/createssss', function (Request $request) {
 
         $param = array('fulfillment' => $fulfillment);
         //file_put_contents($filename.'-fulfilitem', json_encode($param));
-
         $result = $api->rest('POST', '/admin/fulfillments.json', $param);
         $fulfillment_result = $result['body']['fulfillment'];
-
         //file_put_contents($filename.'-response_fulfillment', json_encode($fulfillment_result));
-
-        $quantity = 0;
-        $weight = 0;
-        foreach($fulfillment_result->line_items as $item) {
-            $quantity += $item['quantity'];
-            $weight += $item['grams']/1000;
-        }
-
-
-        $result = $api->rest('GET', '/admin/locations/'.$fulfillment_result->location_id.'.json');
-        $location_address = $result['body']['location']['name'];
-        //file_put_contents($filename.'-location', $location_address);
-        $create_orders = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/CreateOrder', [
-            "ProcessOrder"=> false,
-            "pickupLocation"=> $location_address,
-            "dropOffAddress"=> [
-                "FirstName"=> $got_order['shipping_address']['first_name'],
-                "LastName"=> $got_order['shipping_address']['last_name'],
-                "Email"=> $got_order['customer']['email'],
-                "PhoneNumber"=> empty( $got_order['shipping_address']['phone'])? 01234567:$got_order['shipping_address']['phone'],
-                "Country"=> "lebanon",//$got_order['shipping_address']['country'],
-                "City"=> $got_order['shipping_address']['city'],
-                "Address1"=> "beirut,lebanon", //$got_order['shipping_address']['address1'],
-                "Address2"=> empty( $got_order['shipping_address']['address2'])? 01234567:$got_order['shipping_address']['address2'],
-                "ZipPostalCode"=> empty( $got_order['shipping_address']['zip'])? 01234567:$got_order['shipping_address']['zip'],
-            ],
-
-            "CODAmount"=> $quantity,
-            "COdCurrency"=> $got_order['currency'],
-            "ActualWeight"=> $weight,
-            "PackageType"=> "Parcel",
-            "Length"=> 1,
-            "Width"=> 1,
-            "Height"=> 1,
-
-            "Notes"=> empty($got_order['note'])? '':$got_order['note'],
-            "SystemShipmentProvider"=>(empty($got_order['shipping_lines'][0]['title']) || $got_order['shipping_lines'][0]['title']=="Standard")? null:"Shipping.".$got_order['shipping_lines'][0]['title'],
-            "MethodName"=>($got_order['shipping_lines'][0]['code']=="None" || $got_order['shipping_lines'][0]['code']=="Standard")? null:$got_order['shipping_lines'][0]['code'],
-            "MethodDescription"=>($got_order['shipping_lines'][0]['code']=="None" || $got_order['shipping_lines'][0]['code']=="Standard")? null:$got_order['shipping_lines'][0]['code'],
-            "Price"=> $got_order['total_price']
-        ])->object();
-
-        $filename =  time();
-        //file_put_contents($filename.'-carrier_response',json_encode($create_orders));
-
-        $tracking_number = $create_orders->TrackingNumber;
-        //file_put_contents($filename.'-trackingNumber',$tracking_number);
-
-        $tracking_info= array("number" => $tracking_number);
-
-        $fulfill_track = array(
-            'nofity_customer'=>true,
-            'tracking_info'=>$tracking_info
-        );
-
-        $param = array('fulfillment' => $fulfill_track);
-        //file_put_contents($filename.'-ful_track', json_encode($param));
-
-        $result = $api->rest('POST', '/admin/fulfillments/'.$fulfillment_result->id.'/update_tracking.json',$param);
-        $fulfillment_update = $result['body']['fulfillment'];
-        //file_put_contents($filename.'-response_fulfillment_update', json_encode($fulfillment_update));
     }
 })->name('create.order');
 
