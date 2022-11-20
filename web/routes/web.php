@@ -128,7 +128,7 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     $codAmount = 0;
     $quantity = 0;
     $weight = 0;
-    ///file_put_contents($filename."-000getrate", $input);
+    //file_put_contents($filename."-000getrate", $input);
     foreach($rates['rate']['items'] as $item) {
         $quantity += $item['quantity'];
         $codAmount += $item['quantity'] * $item['price'];
@@ -140,6 +140,31 @@ Route::post('/api/shipping/getrate', function (Request $request) {
         'Email' => 'api@customer.test',
         'Password' => 'Xyz78900'
     ])->object()->token;
+
+    $inputData = array(
+        'incluedShippingCost' => true,
+        'CODAmount' => $codAmount,
+        'COdCurrency' => $rates['rate']['currency'],
+        'DropOffLocation' => $rates['rate']['destination']['address1'].', '.$rates['rate']['destination']['city'].' '.$rates['rate']['destination']['province'].', '.$rates['rate']['destination']['country'],
+        'ToLongitude' => $rates['rate']['destination']['longitude'],
+        'ToLatitude' => $rates['rate']['destination']['latitude'],
+        'ActualWeight' => $weight,
+        'Dimensions' => [
+            "Length"=> 1,
+            "Width"=> 1,
+            "Height"=> 1,
+            "Unit"=> "cm"
+        ],
+        'PackageType'=> 'Parcel',
+        'DropAddress'=> [
+        //   'CountryCode'=> 'LB',
+        //   'City'=> 'Beirut'
+          'CountryCode'=> $rates['rate']['destination']['country'],
+          'City'=> $rates['rate']['destination']['city']
+        ],
+        'IsVendor'=> true
+    );
+    //file_put_contents($filename."-000getInput", json_encode($inputData));
 
     $carrier_rates = Http::withHeaders([
         'Authorization' => 'Bearer ' . $token,
@@ -179,9 +204,9 @@ Route::post('/api/shipping/getrate', function (Request $request) {
             'min_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+1 days')),
             'max_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+2 days'))
         );
-        //file_put_contents($filename."-000getResult", json_encode($rate));
         array_push($data, $arr);
     }
+    //file_put_contents($filename."-000getResult", json_encode($data));
 
     $res['rates'] = $data;
     header('Content-Type: application/json');
