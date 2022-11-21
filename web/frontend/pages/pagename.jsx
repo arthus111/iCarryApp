@@ -87,7 +87,7 @@ import {
     return (
       <Page narrowWidth>
         <TitleBar
-          title="Connection with iCarry"
+          title="Connection to iCarry"
           primaryAction={{
             content: "Connect",
             onAction: titleClick,
