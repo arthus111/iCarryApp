@@ -5,6 +5,8 @@ use App\Lib\AuthRedirection;
 use App\Lib\EnsureBilling;
 use App\Lib\ProductCreator;
 use App\Models\Session;
+use App\Models\Credential;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -58,7 +60,6 @@ Route::fallback(function (Request $request) {
 
 Route::get('/api/auth', function (Request $request) {
     $shop = Utils::sanitizeShopDomain($request->query('shop'));
-    console.log($shop);
 
     // Delete any previously created OAuth sessions that were not completed (don't have an access token)
     Session::where('shop', $shop)->where('access_token', null)->delete();
@@ -117,6 +118,7 @@ Route::post('/api/webhooks', function (Request $request) {
 });
 
 Route::post('/api/shipping/getrate', function (Request $request) {
+    $shop = $request->header('X-Shopify-Shop-Domain');
     $filename = time();
 
     $input = file_get_contents('php://input');
@@ -136,10 +138,11 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     }
 
     //file_put_contents($filename."-000CodAmount", $codAmount);
-    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
-        'Email' => 'api@customer.test',
-        'Password' => 'Xyz78900'
-    ])->object()->token;
+    $credential = Credential::where('shop',$shop)->first();
+    if(empty($credential))
+    return false;
+
+    $token = $credential->token;
 
     $inputData = array(
         'incluedShippingCost' => true,
@@ -265,10 +268,12 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     $location_address = $location['body']['location']['name'];
     //file_put_contents($filename.'-1location0', $location_address);
 
-    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
-        'Email' => 'api@customer.test',
-        'Password' => 'Xyz78900'
-    ])->object()->token;
+    $shop = $request->header('X-Shopify-Shop-Domain');
+    $credential = Credential::where('shop',$shop)->first();
+    if(empty($credential))
+    return false;
+
+    $token = $credential->token;
 
     $create_orders = Http::withHeaders([
         'Authorization' => 'Bearer ' . $token,
@@ -350,11 +355,6 @@ Route::post('/api/order/create', function (Request $request) {
         return false;
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'/fulfillment_orders.json');
     $fulfillment_orders = $result['body']['fulfillment_orders'];
-
-    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
-        'Email' => 'api@customer.test',
-        'Password' => 'Xyz78900'
-    ])->object()->token;
 
     //file_put_contents($filename.'-1fulfillment_orders', json_encode($fulfillment_orders));
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'.json');
@@ -445,5 +445,47 @@ Route::get('/api/configuration', function (Request $request) {
         Log::error("Got an exception when adding service and webhook: {$e->getMessage()}");
         return response()->json(['message' => $e->getMessage()], 500);
 }
+
+})->middleware('shopify.auth');
+
+Route::post('/api/configuration/post', function (Request $request) {
+    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+    $shop = $session->getShop();
+    $email = $request->input('Email');
+    $password = $request->input('Password');
+
+    $data = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
+        'Email' => $email,
+        'Password' => $password
+    ])->object();
+    if(isset($data->api_plugin_type))
+    {
+        $token = $data->token;
+        $api_type = $data->api_plugin_type;
+        $site_url = $data->site_url;
+        //$current_site= "https://".$shop."/";
+        $current_site="https://icarryapp.myshopify.com/";
+
+        if($api_type=='Shopify' && $current_site ==$site_url){
+            if(empty(Credential::where('email', $email)->where('password', $password)->first()))
+            {
+
+                $user_info = new Credential;
+                $user_info->email = $email;
+                $user_info->password = $password;
+                $user_info->token = $token;
+                $user_info->shop = $shop;
+                $user_info->save();
+                return response()->json(['message' => "connected"]);
+            }
+            else return response()->json(['message' => "already exist"]);
+        }
+        else return response()->json(['message' => "invalid"]);
+        //var_dump($current_site);die;
+    }
+    else
+    {
+        return response()->json(['message'=>"input_error"]);
+    }
 
 })->middleware('shopify.auth');
