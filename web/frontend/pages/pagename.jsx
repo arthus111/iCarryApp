@@ -28,16 +28,12 @@ import {
     const toastMarkup = toastProps.content && (
         <Toast {...toastProps} onDismiss={() => setToastProps(emptyToastProps)} />
     );
-
-
     const {
     data
     } = useAppQuery({
     url: "/api/configuration/get",
     reactQueryOptions: {
         onSuccess: (res) => {
-        console.log("success");
-        console.log(res);
         setIsLoading(false);
         setIsFirstLoading(false);
         setEmail(res.data.email);
@@ -124,7 +120,10 @@ import {
               // primaryFooterAction={{ content: "Connect to iCarry" }}
               // onClick={handleSubmit}
             >
-              <Form>
+                <p>
+                    Get iCarry Courier rates for each order based on your shipping and customer pin code. Using this app you can display iCarry courier enabling this iCarry  will update your Products and Checkout Page.
+                </p>
+              <Form style={{marginTop : 300}}>
                 <FormLayout>
                   <TextField
                     label="Email"
