@@ -463,24 +463,30 @@ Route::post('/api/configuration/post', function (Request $request) {
         $token = $data->token;
         $api_type = $data->api_plugin_type;
         $site_url = $data->site_url;
-        //$current_site= "https://".$shop."/";
-        $current_site="https://icarryapp.myshopify.com/";
+        $current_site= "https://".$shop."/";
+        //$current_site="https://icarryapp.myshopify.com/";
 
-        if($api_type=='Shopify' && $current_site ==$site_url){
-            if(empty(Credential::where('email', $email)->where('password', $password)->first()))
-            {
+        if($api_type=='Shopify'){
+            if($current_site ==$site_url){
+                if(empty(Credential::where('email', $email)->where('password', $password)->first()))
+                {
 
-                $user_info = new Credential;
-                $user_info->email = $email;
-                $user_info->password = $password;
-                $user_info->token = $token;
-                $user_info->shop = $shop;
-                $user_info->save();
-                return response()->json(['message' => "connected"]);
+                    $user_info = new Credential;
+                    $user_info->email = $email;
+                    $user_info->password = $password;
+                    $user_info->token = $token;
+                    $user_info->shop = $shop;
+                    $user_info->save();
+                    return response()->json(['message' => "connected"]);
+                }
+                else return response()->json(['message' => "already_exist"]);
             }
-            else return response()->json(['message' => "already exist"]);
+            else return response()->json(['message' => "site_url_error"]);
         }
-        else return response()->json(['message' => "invalid"]);
+        else{
+            return response()->json(['message' => "plugin_error"]);
+        }
+
         //var_dump($current_site);die;
     }
     else
@@ -488,4 +494,31 @@ Route::post('/api/configuration/post', function (Request $request) {
         return response()->json(['message'=>"input_error"]);
     }
 
+})->middleware('shopify.auth');
+
+Route::get('/api/configuration/get', function (Request $request) {
+    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+    $shop = $session->getShop();
+
+    $success = $code = $error = null;
+    try{
+        $credential = Credential::where('shop', $shop)->first();
+        $data = array();
+        if(!empty($credential))
+        {
+            $success  = true;
+            $code = 200;
+            $data = array(
+                "email" =>$credential->email,
+                "password" => $credential->password
+            );
+        }
+    }
+    catch (\Exception $e){
+        $success = false;
+        $code = 500;
+        $error = $e->getMessage();
+    } finally {
+        return response()->json(["success" => $success, "data" => $data, "error" => $error], $code);
+    }
 })->middleware('shopify.auth');
