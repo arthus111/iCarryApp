@@ -17,7 +17,6 @@ class CreateCredentialsTable extends Migration
             $table->id();
             $table->string('email');
             $table->string('password');
-            $table->string('token');
             $table->string('shop');
             $table->timestamps();
         });

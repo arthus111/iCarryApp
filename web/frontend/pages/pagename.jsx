@@ -91,9 +91,9 @@ import {
                     content: "You are successfully connected!",
                 });
             }
-            else if(data.message=='already_exists'){
+            else if(data.message=='updated'){
                 setToastProps({
-                    content: "You are already connected!",
+                    content: "You are successfully updated!",
                 });
             }
         })

@@ -118,7 +118,7 @@ Route::post('/api/webhooks', function (Request $request) {
 });
 
 Route::post('/api/shipping/getrate', function (Request $request) {
-    $shop = $request->header('X-Shopify-Shop-Domain');
+
     $filename = time();
 
     $input = file_get_contents('php://input');
@@ -138,11 +138,15 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     }
 
     //file_put_contents($filename."-000CodAmount", $codAmount);
+    $shop = $request->header('X-Shopify-Shop-Domain');
     $credential = Credential::where('shop',$shop)->first();
     if(empty($credential))
-    return false;
+        return false;
+    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
+        'Email' => $credential->email,
+        'Password' => $credential->password
+    ])->object()->token;
 
-    $token = $credential->token;
 
     $inputData = array(
         'incluedShippingCost' => true,
@@ -270,10 +274,13 @@ Route::post('/api/shipping/create_order', function (Request $request) {
 
     $shop = $request->header('X-Shopify-Shop-Domain');
     $credential = Credential::where('shop',$shop)->first();
-    if(empty($credential))
-    return false;
 
-    $token = $credential->token;
+    if(empty($credential))
+        return false;
+    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
+        'Email' => $credential->email,
+        'Password' => $credential->password
+    ])->object()->token;
 
     $create_orders = Http::withHeaders([
         'Authorization' => 'Bearer ' . $token,
@@ -463,23 +470,28 @@ Route::post('/api/configuration/post', function (Request $request) {
         $token = $data->token;
         $api_type = $data->api_plugin_type;
         $site_url = $data->site_url;
-        $current_site= "https://".$shop."/";
-        //$current_site="https://icarryapp.myshopify.com/";
+        //$current_site= "https://".$shop."/";
+        $current_site="https://icarry2.myshopify.com/";
 
         if($api_type=='Shopify'){
             if($current_site ==$site_url){
-                if(empty(Credential::where('email', $email)->where('password', $password)->first()))
+                $user_info = Credential::where('email', $email)->where('password', $password)->first();
+                if(empty($user_info))
                 {
-
                     $user_info = new Credential;
                     $user_info->email = $email;
                     $user_info->password = $password;
-                    $user_info->token = $token;
                     $user_info->shop = $shop;
                     $user_info->save();
                     return response()->json(['message' => "connected"]);
                 }
-                else return response()->json(['message' => "already_exist"]);
+                else {
+                    $user_info->email = $email;
+                    $user_info->password = $password;
+                    $user_info->shop = $shop;
+                    $user_info->save();
+                    return response()->json(['message' => "updated"]);
+                }
             }
             else return response()->json(['message' => "site_url_error"]);
         }
