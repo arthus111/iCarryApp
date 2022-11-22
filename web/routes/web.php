@@ -29,6 +29,7 @@ use Shopify\Rest\Admin2022_10\Product;
 use Shopify\Rest\Admin2022_10\CarrierService;
 use Shopify\Rest\Admin2022_10\Webhook;
 use Shopify\Rest\Admin2022_10\FulfillmentOrder;
+use Shopify\Rest\Admin2022_10\AccessScope;
 
 use Osiset\BasicShopifyAPI\BasicShopifyAPI;
 use Osiset\BasicShopifyAPI\Options;
@@ -471,7 +472,7 @@ Route::post('/api/configuration/post', function (Request $request) {
         $api_type = $data->api_plugin_type;
         $site_url = $data->site_url;
         $current_site= "https://".$shop."/";
-        //$current_site="https://icarry3.myshopify.com/";
+        //$current_site="https://icarryapp.myshopify.com/";
 
         if($api_type=='Shopify'){
             if($current_site ==$site_url){
@@ -511,6 +512,9 @@ Route::post('/api/configuration/post', function (Request $request) {
 Route::get('/api/configuration/get', function (Request $request) {
     $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
     $shop = $session->getShop();
+
+    $scopes = AccessScope::all($session);
+    file_put_contents("scope", json_encode($scopes));
 
     $success = $code = $error = null;
     try{
