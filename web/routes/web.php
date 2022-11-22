@@ -514,7 +514,7 @@ Route::get('/api/configuration/get', function (Request $request) {
     $shop = $session->getShop();
 
     $scopes = AccessScope::all($session);
-    file_put_contents("scope", json_encode($scopes));
+    //file_put_contents("scope", json_encode($scopes));
 
     $success = $code = $error = null;
     try{
