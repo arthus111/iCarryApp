@@ -93,7 +93,7 @@ import {
             }
             else if(data.message=='updated'){
                 setToastProps({
-                    content: "You are successfully updated!",
+                    content: "Your credential is successfully updated!",
                 });
             }
         })
