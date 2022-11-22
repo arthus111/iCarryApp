@@ -470,8 +470,8 @@ Route::post('/api/configuration/post', function (Request $request) {
         $token = $data->token;
         $api_type = $data->api_plugin_type;
         $site_url = $data->site_url;
-        //$current_site= "https://".$shop."/";
-        $current_site="https://icarry2.myshopify.com/";
+        $current_site= "https://".$shop."/";
+        //$current_site="https://icarry3.myshopify.com/";
 
         if($api_type=='Shopify'){
             if($current_site ==$site_url){
