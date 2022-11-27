@@ -341,27 +341,22 @@ Route::post('/api/order/create', function (Request $request) {
 
     $credential = Credential::where('shop',$shop)->first();
     if(empty($credential))
-        //return false;
-        file_put_contents("000","000");
-        file_put_contents("001","000");
+        return false;
 
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => $credential->email,
         'Password' => $credential->password
     ])->object();
-    file_put_contents("002","000");
     //$current_site= "https://".$shop."/";
     $current_site="https://icarry-support.myshopify.com/";
     if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
-    file_put_contents("003","000");
-    //return false;
+        return false;
 
     $filename = time();
     $input = file_get_contents('php://input');
     $order = json_decode($input, true);
     //file_put_contents($filename.'-0create-order-input', $input);
 
-    file_put_contents("004","000");
     // Now run your requests...
     if($order['fulfillment_status']=="fulfilled")
         return false;
