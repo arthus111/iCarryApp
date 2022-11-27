@@ -5,6 +5,7 @@ import {
     Form,
     FormLayout,
     TextField,
+    Button
   } from "@shopify/polaris";
   import { TitleBar } from "@shopify/app-bridge-react";
   import { useState, useCallback } from "react";
@@ -26,7 +27,7 @@ import {
     const handlePasswordClearButtonClick = useCallback(() => setPassword(""), []);
 
     const toastMarkup = toastProps.content && (
-        <Toast {...toastProps} onDismiss={() => setToastProps(emptyToastProps)} />
+        <Toast {...toastProps} duration={1500} onDismiss={() => setToastProps(emptyToastProps)} />
     );
     const {
     data
@@ -42,7 +43,7 @@ import {
     },
     });
 
-    const titleClick = () => {
+    const saveClick = () => {
 
         setIsLoading(true);
         var jsonData = {
@@ -51,7 +52,6 @@ import {
         };
         var responseClone;
         fetch(
-            //"https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi",
             "/api/configuration/post",
             {
             method: "POST",
@@ -68,6 +68,54 @@ import {
         })
         .then((data) => {
 
+            if(data.message=='created'){
+                setToastProps({
+                    content: "Your credential is successfully saved!",
+                    error: false
+                });
+            }
+            else if(data.message=='updated'){
+                setToastProps({
+                    content: "Your credential is successfully updated!",
+                    error: false
+                });
+            }
+            else if(data.message=='error'){
+                setToastProps({
+                    content: "There is connection error!",
+                    error: true
+                });
+            }
+        })
+        .catch((err) => {
+          console.log(err.message);
+        });
+    };
+
+    const connectCheckClick = () => {
+
+        setIsLoading(true);
+        var jsonData = {
+            Email: email,
+            Password: password,
+        };
+        var responseClone;
+        fetch(
+            "/api/configuration/check",
+            {
+            method: "POST",
+            body: JSON.stringify(jsonData),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8",
+            },
+            }
+        )
+        .then(function (response) {
+            setIsLoading(false);
+            responseClone = response.clone(); // 2
+            return response.json();
+        })
+        .then((data) => {
             if(data.message=='site_url_error'){
                 setToastProps({
                     content: "This app is not registered for this site!",
@@ -89,11 +137,7 @@ import {
             else if(data.message=='connected'){
                 setToastProps({
                     content: "You are successfully connected!",
-                });
-            }
-            else if(data.message=='updated'){
-                setToastProps({
-                    content: "Your credential is successfully updated!",
+                    error: false
                 });
             }
         })
@@ -106,8 +150,8 @@ import {
         <TitleBar
           title="Connection to iCarry"
           primaryAction={{
-            content: "Connect",
-            onAction: titleClick,
+            content: "Save",
+            onAction: saveClick,
             loading: isLoading
           }}
         />
@@ -147,6 +191,12 @@ import {
                     onClearButtonClick={handlePasswordClearButtonClick}
                   />
                 </FormLayout>
+                <div style={{marginTop: 10}}>
+                    <Button
+                        primary
+                        onClick={connectCheckClick}
+                    >Check Connectivity</Button>
+                </div>
               </Form>
             </Card>
           </Layout.Section>

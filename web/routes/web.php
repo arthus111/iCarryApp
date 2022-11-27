@@ -1,5 +1,5 @@
 <?php
-
+\Firebase\JWT\JWT::$leeway = 100;
 use App\Exceptions\ShopifyProductCreatorException;
 use App\Lib\AuthRedirection;
 use App\Lib\EnsureBilling;
@@ -131,7 +131,7 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     $codAmount = 0;
     $quantity = 0;
     $weight = 0;
-    //file_put_contents($filename."-000getrate", $input);
+    ////file_put_contents($filename."-000getrate", $input);
     foreach($rates['rate']['items'] as $item) {
         $quantity += $item['quantity'];
         $codAmount += $item['quantity'] * $item['price'];
@@ -146,36 +146,14 @@ Route::post('/api/shipping/getrate', function (Request $request) {
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => $credential->email,
         'Password' => $credential->password
-    ])->object()->token;
+    ])->object();
 
-
-    $inputData = array(
-        'incluedShippingCost' => true,
-        'CODAmount' => $codAmount,
-        'COdCurrency' => $rates['rate']['currency'],
-        'DropOffLocation' => $rates['rate']['destination']['address1'].', '.$rates['rate']['destination']['city'].' '.$rates['rate']['destination']['province'].', '.$rates['rate']['destination']['country'],
-        'ToLongitude' => $rates['rate']['destination']['longitude'],
-        'ToLatitude' => $rates['rate']['destination']['latitude'],
-        'ActualWeight' => $weight,
-        'Dimensions' => [
-            "Length"=> 1,
-            "Width"=> 1,
-            "Height"=> 1,
-            "Unit"=> "cm"
-        ],
-        'PackageType'=> 'Parcel',
-        'DropAddress'=> [
-        //   'CountryCode'=> 'LB',
-        //   'City'=> 'Beirut'
-          'CountryCode'=> $rates['rate']['destination']['country'],
-          'City'=> $rates['rate']['destination']['city']
-        ],
-        'IsVendor'=> true
-    );
-    //file_put_contents($filename."-000getInput", json_encode($inputData));
-
+    //$current_site= "https://".$shop."/";
+    $current_site="https://icarry-support.myshopify.com/";
+    if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
+        return false;
     $carrier_rates = Http::withHeaders([
-        'Authorization' => 'Bearer ' . $token,
+        'Authorization' => 'Bearer ' . $token->token,
     ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/EstimateRatesByCOD', [
         'incluedShippingCost' => true,
         'CODAmount' => $codAmount,
@@ -199,33 +177,37 @@ Route::post('/api/shipping/getrate', function (Request $request) {
         ],
         'IsVendor'=> true
     ])->object();
+    // file_put_contents($filename."-000carrier_rates", json_encode($carrier_rates));
 
     $data = array();
-
     foreach($carrier_rates as $rate) {
         $arr = array(
             'service_name'=> $rate->Name,
             'service_code'=> empty($rate->MethodName)? "None":$rate->MethodName,
-            'description' => $rate->Description,
+            'description' => "test",
             'total_price'=> $rate->Rate,
             'currency'=> $rates['rate']['currency'], // this from shopify store.
             'min_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+1 days')),
             'max_delivery_date'=> date('Y-m-d H:i:s O', strtotime('+2 days'))
         );
+        // $filename=time();
+        // file_put_contents($filename."-000", "abc");
         array_push($data, $arr);
-    }
+    };
     //file_put_contents($filename."-000getResult", json_encode($data));
 
     $res['rates'] = $data;
     header('Content-Type: application/json');
+
     echo json_encode($res);
+    //return response()->json($res);
 
 })->name('shipping.getrate');
 
 Route::post('/api/shipping/create_order', function (Request $request) {
 
-    $headers = $request->header('X-Shopify-Shop-Domain');
-    $access_token = Session::where('shop', $headers)->first()->access_token;
+    $shop = $request->header('X-Shopify-Shop-Domain');
+    $access_token = Session::where('shop', $shop)->first()->access_token;
     // Create options for the API
     $options = new Options();
     // $options->setType(true); // Makes it private
@@ -234,7 +216,7 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     $options->setApiPassword(env('SHOPIFY_API_SECRET'));
     // Create the client and session
     $api = new BasicShopifyAPI($options);
-    $api->setSession(new APISession($headers, $access_token));
+    $api->setSession(new APISession($shop, $access_token));
 
     $filename = time();
     $input = file_get_contents('php://input');
@@ -281,10 +263,14 @@ Route::post('/api/shipping/create_order', function (Request $request) {
     $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
         'Email' => $credential->email,
         'Password' => $credential->password
-    ])->object()->token;
+    ])->object();
+    //$current_site= "https://".$shop."/";
+    $current_site="https://icarry-support.myshopify.com/";
+    if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
+        return false;
 
     $create_orders = Http::withHeaders([
-        'Authorization' => 'Bearer ' . $token,
+        'Authorization' => 'Bearer ' . $token->token,
     ])->post('https://test.icarry.com/api-frontend/SmartwareShipment/CreateOrder', [
         "ProcessOrder"=> false,
         "pickupLocation"=> $location_address,
@@ -340,9 +326,9 @@ Route::post('/api/shipping/create_order', function (Request $request) {
 })->name('create.shipping_order');
 
 Route::post('/api/order/create', function (Request $request) {
-    $headers = $request->header('X-Shopify-Shop-Domain');
+    $shop = $request->header('X-Shopify-Shop-Domain');
 
-    $access_token = Session::where('shop', $headers)->first()->access_token;
+    $access_token = Session::where('shop', $shop)->first()->access_token;
     // Create options for the API
     $options = new Options();
     // $options->setType(true); // Makes it private
@@ -351,7 +337,20 @@ Route::post('/api/order/create', function (Request $request) {
     $options->setApiPassword(env('SHOPIFY_API_SECRET'));
     // Create the client and session
     $api = new BasicShopifyAPI($options);
-    $api->setSession(new APISession($headers, $access_token));
+    $api->setSession(new APISession($shop, $access_token));
+
+    $credential = Credential::where('shop',$shop)->first();
+    if(empty($credential))
+        return false;
+    $token = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
+        'Email' => $credential->email,
+        'Password' => $credential->password
+    ])->object();
+
+    //$current_site= "https://".$shop."/";
+    $current_site="https://icarryapp.myshopify.com/";
+    if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
+        return false;
 
     $filename = time();
     $input = file_get_contents('php://input');
@@ -457,55 +456,41 @@ Route::get('/api/configuration', function (Request $request) {
 })->middleware('shopify.auth');
 
 Route::post('/api/configuration/post', function (Request $request) {
-    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
-    $shop = $session->getShop();
-    $email = $request->input('Email');
-    $password = $request->input('Password');
+        $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+        $shop = $session->getShop();
+        $email = $request->input('Email');
+        $password = $request->input('Password');
 
-    $data = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
-        'Email' => $email,
-        'Password' => $password
-    ])->object();
-    if(isset($data->api_plugin_type))
-    {
-        $token = $data->token;
-        $api_type = $data->api_plugin_type;
-        $site_url = $data->site_url;
-        $current_site= "https://".$shop."/";
-        //$current_site="https://icarryapp.myshopify.com/";
-
-        if($api_type=='Shopify'){
-            if($current_site ==$site_url){
-                $user_info = Credential::where('email', $email)->where('password', $password)->first();
-                if(empty($user_info))
-                {
+        $user_info = Credential::where('email', $email)->where('password', $password)->first();
+        try {
+            if(empty($user_info))
+            {
+                $shop_info=Credential::where('shop', $shop)->first();
+                if(empty($shop_info)){
                     $user_info = new Credential;
                     $user_info->email = $email;
                     $user_info->password = $password;
                     $user_info->shop = $shop;
                     $user_info->save();
-                    return response()->json(['message' => "connected"]);
+                    return response()->json(['message' => "created"]);
                 }
-                else {
-                    $user_info->email = $email;
-                    $user_info->password = $password;
-                    $user_info->shop = $shop;
-                    $user_info->save();
+                else{
+                    $shop_info->email = $email;
+                    $shop_info->password = $password;
+                    $shop_info->save();
                     return response()->json(['message' => "updated"]);
                 }
             }
-            else return response()->json(['message' => "site_url_error"]);
+            else {
+                $user_info->email = $email;
+                $user_info->password = $password;
+                $user_info->shop = $shop;
+                $user_info->save();
+                return response()->json(['message' => "updated"]);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => "error"]);
         }
-        else{
-            return response()->json(['message' => "plugin_error"]);
-        }
-
-        //var_dump($current_site);die;
-    }
-    else
-    {
-        return response()->json(['message'=>"input_error"]);
-    }
 
 })->middleware('shopify.auth');
 
@@ -537,4 +522,38 @@ Route::get('/api/configuration/get', function (Request $request) {
     } finally {
         return response()->json(["success" => $success, "data" => $data, "error" => $error], $code);
     }
+})->middleware('shopify.auth');
+
+Route::post('/api/configuration/check', function (Request $request) {
+        $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+        $shop = $session->getShop();
+        $email = $request->input('Email');
+        $password = $request->input('Password');
+
+        $data = Http::post('https://test.icarry.com/api-frontend/Authenticate/GetTokenForCustomerApi', [
+            'Email' => $email,
+            'Password' => $password
+        ])->object();
+        if(isset($data->api_plugin_type))
+        {
+            $token = $data->token;
+            $api_type = $data->api_plugin_type;
+            $site_url = $data->site_url;
+            //$current_site= "https://".$shop."/";
+            $current_site="https://icarry-support.myshopify.com/";
+
+            if($api_type=='Shopify'){
+                if($current_site ==$site_url){
+                    return response()->json(['message' => "connected"]);
+                }
+                else return response()->json(['message' => "site_url_error"]);
+            }
+            else{
+                return response()->json(['message' => "plugin_error"]);
+            }
+        }
+        else
+        {
+            return response()->json(['message'=>"input_error"]);
+        }
 })->middleware('shopify.auth');
