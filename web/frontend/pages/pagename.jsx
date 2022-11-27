@@ -70,13 +70,13 @@ import {
 
             if(data.message=='created'){
                 setToastProps({
-                    content: "Your credential is successfully saved!",
+                    content: "Successfully saved!",
                     error: false
                 });
             }
             else if(data.message=='updated'){
                 setToastProps({
-                    content: "Your credential is successfully updated!",
+                    content: "Successfully updated!",
                     error: false
                 });
             }
@@ -194,6 +194,7 @@ import {
                 <div style={{marginTop: 10}}>
                     <Button
                         primary
+                        loading={isLoading}
                         onClick={connectCheckClick}
                     >Check Connectivity</Button>
                 </div>
