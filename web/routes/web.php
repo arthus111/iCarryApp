@@ -85,7 +85,7 @@ Route::get('/api/auth/callback', function (Request $request) {
         Log::error(
             "Failed to register APP_UNINSTALLED webhook for shop $shop with response body: " .
                 print_r($response->getBody(), true)
-        );
+            );
     }
 
     $redirectUrl = Utils::getEmbeddedAppUrl($host);
@@ -116,7 +116,7 @@ Route::post('/api/webhooks', function (Request $request) {
         Log::error("Got an exception when handling '$topic' webhook: {$e->getMessage()}");
         return response()->json(['message' => "Got an exception when handling '$topic' webhook"], 500);
     }
-});
+})->name('webhooks');
 
 Route::post('/api/shipping/getrate', function (Request $request) {
 
@@ -148,8 +148,8 @@ Route::post('/api/shipping/getrate', function (Request $request) {
         'Password' => $credential->password
     ])->object();
 
-    //$current_site= "https://".$shop."/";
-    $current_site="https://icarryapp3.myshopify.com/";
+    $current_site= "https://".$shop."/";
+    //$current_site="https://icarryapp3.myshopify.com/";
     if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
         return false;
     $carrier_rates = Http::withHeaders([
@@ -264,8 +264,8 @@ Route::post('/api/shipping/create_order', function (Request $request) {
         'Email' => $credential->email,
         'Password' => $credential->password
     ])->object();
-    //$current_site= "https://".$shop."/";
-    $current_site="https://icarryapp3.myshopify.com/";
+    $current_site= "https://".$shop."/";
+    //$current_site="https://icarryapp3.myshopify.com/";
     if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
         return false;
 
@@ -378,22 +378,22 @@ Route::post('/api/order/create', function (Request $request) {
         'Email' => $credential->email,
         'Password' => $credential->password
     ])->object();
-    //$current_site= "https://".$shop."/";
-    $current_site="https://icarryapp3.myshopify.com/";
+    $current_site= "https://".$shop."/";
+    //$current_site="https://icarryapp3.myshopify.com/";
     if(!(($token->api_plugin_type=="Shopify") && ($token->site_url==$current_site)))
         return false;
 
     $filename = time();
     $input = file_get_contents('php://input');
     $order = json_decode($input, true);
-//file_put_contents($filename.'-0create-order-input', $input);
+    //file_put_contents($filename.'-0create-order-input', $input);
 
     // Now run your requests...
     if($order['fulfillment_status']=="fulfilled")
         return false;
     $result = $api->rest('GET', '/admin/orders/'.$order['id'].'/fulfillment_orders.json');
     $fulfillment_orders = $result['body']['fulfillment_orders'];
-//file_put_contents($filename.'-0fulfillment_order', json_encode($fulfillment_orders));
+    //file_put_contents($filename.'-0fulfillment_order', json_encode($fulfillment_orders));
     $temp = serialize($order['payment_gateway_names']);
 
     $codString = "Cash on Delivery (COD)";
@@ -544,7 +544,7 @@ Route::get('/api/configuration', function (Request $request) {
 
         $webhooks=Webhook::all($session);
         foreach($webhooks as $webhook){
-            if($webhook->topic == 'fulfillments/create' || $webhook->topic == 'orders/create')
+            if($webhook->topic == 'fulfillments/create' || $webhook->topic == 'orders/create' || $webhook->topic == "app/uninstalled")
             {
                 $webhook_id = $webhook->id;
                 Webhook::delete($session, $webhook_id);
@@ -570,6 +570,14 @@ Route::get('/api/configuration', function (Request $request) {
         $webhook = new Webhook($session);
         $webhook->topic = "orders/create";
         $webhook->address = route('create.order');
+        $webhook->format = "json";
+        $webhook->save(
+            true, // Update Object
+        );
+
+        $webhook = new Webhook($session);
+        $webhook->topic = "app/uninstalled";
+        $webhook->address = route('webhooks');
         $webhook->format = "json";
         $webhook->save(
             true, // Update Object
@@ -668,8 +676,8 @@ Route::post('/api/configuration/check', function (Request $request) {
             $token = $data->token;
             $api_type = $data->api_plugin_type;
             $site_url = $data->site_url;
-            //$current_site= "https://".$shop."/";
-            $current_site="https://icarryapp3.myshopify.com/";
+            $current_site= "https://".$shop."/";
+            //$current_site="https://icarryapp3.myshopify.com/";
 
             if($api_type=='Shopify'){
                 if($current_site ==$site_url){
